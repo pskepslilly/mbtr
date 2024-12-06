@@ -74,6 +74,10 @@ class Tree:
                       is being used.
 
         """
+        # cast if necessary
+        if type(x) == list: x = np.array(x, dtype=np.float64)
+        if type(y) == list: y = np.array(y, dtype=np.float64)
+
         # set loss dimensionality
         self.loss.set_dimension(y.shape[1])
 
@@ -94,6 +98,10 @@ class Tree:
         :return: target's predictions
         """
         r = []
+        # cast if necessary
+        if type(x) == list: x = np.array(x, dtype=np.float64)
+        if type(x_lr) == list: x_lr = np.array(x_lr, dtype=np.float64)
+
         if x_lr is None:
             for x_i in x:
                 r.append(self._predict_node(x_i, 'origin'))
@@ -401,6 +409,10 @@ class MBT:
                       is being used.
         """
         # divide in training and validation sets (has effect only if pars['val_ratio'] was set
+        
+        if type(x) == list: x = np.array(x, dtype=np.float64)
+        if type(y) == list: y = np.array(y, dtype=np.float64)
+        
         x_tr, x_val, y_tr, y_val, x_lr_tr, x_lr_val = self._validation_split(x, y, x_lr)
         lowest_loss = np.inf
         best_iter = 0
@@ -502,6 +514,23 @@ class MBT:
                 y_hat = y_hat + tree.predict(x, x_lr)
         return y_hat
 
+    def set_params(self, n_boosts: int = 20, early_stopping_rounds: int = 3, learning_rate: float = 0.1,
+                 val_ratio: int = 0, n_q: int = 10, min_leaf: int = 100, loss_type: str = "mse",
+                 lambda_weights: float = 0.1, lambda_leaves: float = 0.1, verbose: int = 0, refit=True, **loss_kwargs):
+        self.n_boosts = n_boosts
+        self.early_stopping_rounds = early_stopping_rounds
+        self.learning_rate = learning_rate
+        self.val_ratio = val_ratio
+        self.refit = refit
+        self.tree_pars = {**{'n_q': n_q, 'min_leaf': min_leaf, 'loss_type': loss_type, 'lambda_weights': lambda_weights,
+                             'lambda_leaves': lambda_leaves}, **loss_kwargs}
+
+        self.trees = []
+        self.y_0 = None
+        self.verbose = verbose
+
+        return self
+
     def _get_neg_grad_and_hessian_diags(self, tree, y: np.ndarray, y_hat: np.ndarray, iteration: int, x: np.ndarray):
         """
         Returns the negative gradient at current iteration for all the observations, and a matrix which ith row is
@@ -557,6 +586,8 @@ class MBT:
             x_lr_tr, x_lr_val = [x_lr[tr_idx], x_lr[val_idx]]
 
         return x_tr, x_val, y_tr, y_val, x_lr_tr, x_lr_val
+
+
 
 
 if __name__ == '__main__':
